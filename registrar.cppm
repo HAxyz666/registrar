@@ -7,6 +7,7 @@
 export module registrar;
 export import :student;
 export import :course;
+export import :teacher;
 
 import std;
 using std::string; using std::vector;
@@ -19,14 +20,20 @@ public:
     void studentSchedule(const string& sid);
     void courseRoster(string cid);
     void initialize();
+    void assignTeacherToCourse(string tid, string cid);
+    void teacherGradeStudent(string tid, string sid, string cid, double grade);
+    void teacherTeachingCourses(string tid);
+    void studentGrades(const string& sid);
 
 private:
     Registrar();  // Prohibit creating objects directly
     class Student* findStudentById(const string& id);
     class Course* findCourseById(const string& id);
+    class Teacher* findTeacherById(const string& id);
 
     vector<class Course*> _courses;
     vector<class Student*> _students;
+    vector<class Teacher*> _teachers;
 };
 
 // ----- The implementaion of class Registrar -----
@@ -65,6 +72,10 @@ void Registrar::initialize(){
     _courses.push_back(new Course("CS101", "C Programming"));
     _courses.push_back(new Course("CS201", "Data structure"));
     _courses.push_back(new Course("MATH101", "Advanced Math"));
+    
+    _teachers.push_back(new Teacher("T001", "Dr. Smith"));
+    _teachers.push_back(new Teacher("T002", "Dr. Johnson"));
+    _teachers.push_back(new Teacher("T003", "Dr. Brown"));
 }
 
 Registrar::Registrar(){}
@@ -83,6 +94,47 @@ Course *Registrar::findCourseById(const string &id){
             return course;
     }
     return nullptr;
+}
+
+Teacher *Registrar::findTeacherById(const string& id){
+    for (auto& teacher : _teachers) {
+        if (teacher->hasId(id))
+            return teacher;
+    }
+    return nullptr;
+}
+
+void Registrar::assignTeacherToCourse(string tid, string cid){
+    Teacher* teacher = findTeacherById(tid);
+    Course* course = findCourseById(cid);
+    
+    if (teacher && course) {
+        teacher->assignCourse(course);
+    }
+}
+
+void Registrar::teacherGradeStudent(string tid, string sid, string cid, double grade){
+    Teacher* teacher = findTeacherById(tid);
+    Student* student = findStudentById(sid);
+    Course* course = findCourseById(cid);
+    
+    if (teacher && student && course) {
+        teacher->gradeStudent(student, course, grade);
+    }
+}
+
+void Registrar::teacherTeachingCourses(string tid){
+    Teacher* teacher = findTeacherById(tid);
+    if (teacher) {
+        print("{}\n", teacher->getTeachingCourses());
+    }
+}
+
+void Registrar::studentGrades(const string& sid){
+    auto s = findStudentById(sid);
+    if (s) {
+        print("{}\n", s->getGrades());
+    }
 }
 
 // ----- Implementation of Student-Course object interactions -----
