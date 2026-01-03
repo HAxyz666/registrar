@@ -16,7 +16,7 @@ public:
     Student(string id, string name);
     
     void enrollsIn(class Course* course);
-    string schedule();
+    string coursesList();
     string info();
     bool hasId(string id);
     void addGrade(class Course* course, double grade);
@@ -63,7 +63,7 @@ void Student::addGrade(Course* course, double grade)
 
 string Student::getGrades()
 {
-    auto s = format("{} 的成绩:", m_name);
+    auto s = format("{} 的成绩:\n", m_name);
     for (auto& gradeEntry : _grades) {
         s += format("{} 成绩: {}\n", gradeEntry.first->info(), gradeEntry.second);
     }

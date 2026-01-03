@@ -24,6 +24,7 @@ public:
     void teacherGradeStudent(string tid, string sid, string cid, double grade);
     void teacherTeachingCourses(string tid);
     void studentGrades(const string& sid);
+    void studentCoursesList(const string& sid);
 
 private:
     Registrar();  // Prohibit creating objects directly
@@ -51,10 +52,16 @@ void Registrar::studentEnrollsInCourse(string sid, string cid){
     }
 }
 
-void Registrar::studentSchedule(const string &sid)
+// void Registrar::studentSchedule(const string &sid)
+// {
+//     auto s = findStudentById(sid);
+//     print("{}\n",s->schedule());
+// }
+
+void Registrar::studentCoursesList(const string &sid)
 {
     auto s = findStudentById(sid);
-    print("{}\n",s->schedule());
+    print("{}\n",s->coursesList());
 }
 
 void Registrar::courseRoster(string cid){
@@ -148,15 +155,17 @@ string Course::roster(){
     auto rst = format("{} selected by the students:\n", m_name);
     for (auto s : _students) {
         rst += s->info(); // 课程对象委托学生对象自己输出相关信息
+        rst += "\n";
     }
     return rst;
 }
 
-string Student::schedule()
+string Student::coursesList()
 {
-    auto s = format("{}'s schedule:\n", m_name);
+    auto s = format("{}'s courses:\n", m_name);
     for(auto &c: _courses){
         s += c->info();
+        s += "\n";
     }
     return s;
 }

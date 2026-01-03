@@ -55,20 +55,34 @@ bool Teacher::hasId(string id)
 void Teacher::assignCourse(Course* course)
 {
     _assignedCourses.push_back(course);
-    print("教师 {} 已被分配课程: {}", m_name, course->info());
+    print("教师 {} 已被分配课程: {}\n", m_name, course->info());
 }
 
 void Teacher::gradeStudent(Student* student, Course* course, double grade)
 {
-    student->addGrade(course, grade);
-    print("教师 {} 为学生 {} 的课程 {} 评定成绩: {}", m_name, student->info(), course->info(), grade);
+    // 检查教师是否被分配了该课程
+    bool hasPermission = false;
+    for (auto& assignedCourse : _assignedCourses) {
+        if (assignedCourse == course) {
+            hasPermission = true;
+            break;
+        }
+    }
+    
+    if (hasPermission) {
+        student->addGrade(course, grade);
+        print("教师 {} 为学生 {} 的课程 {} 评定成绩: {}\n", m_name, student->info(), course->info(), grade);
+    } else {
+        print("错误: 教师 {} 没有权限为课程 {} 打分！\n", m_name, course->info());
+    }
 }
 
 string Teacher::getTeachingCourses()
 {
-    auto s = format("{} 的教学任务:", m_name);
+    auto s = format("{} 的教学任务:\n", m_name);
     for (auto& course : _assignedCourses) {
         s += course->info();
+        s += "\n";
     }
     return s;
 }

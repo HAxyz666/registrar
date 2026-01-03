@@ -49,7 +49,7 @@ bool Course::acceptEnrollment(Student *student){
 }
 
 string Course::info(){
-    return format("{}   {}\n", m_id, m_name);
+    return format("{}   {}", m_id, m_name);
 }
 
 
