@@ -10,24 +10,26 @@ import std;
 import :course;
 import :student;
 
+
 using std::string; using std::vector;
 
 export class Teacher
 {
 public:
     Teacher(string id, string name);
-    
+
     string info();
     bool hasId(string id);
     void assignCourse(class Course* course);
     void gradeStudent(class Student* student, class Course* course, double grade);
     string getTeachingCourses();
-    
+    string schedule();
+
 private:
     string m_name;
     string m_id;
     static int tm_totalCount;  // static data member
-    
+
     vector<class Course*> _assignedCourses;
 };
 
@@ -68,7 +70,7 @@ void Teacher::gradeStudent(Student* student, Course* course, double grade)
             break;
         }
     }
-    
+
     if (hasPermission) {
         student->addGrade(course, grade);
         print("教师 {} 为学生 {} 的课程 {} 评定成绩: {}\n", m_name, student->info(), course->info(), grade);
@@ -83,6 +85,15 @@ string Teacher::getTeachingCourses()
     for (auto& course : _assignedCourses) {
         s += course->info();
         s += "\n";
+    }
+    return s;
+}
+
+string Teacher::schedule()
+{
+    auto s = format("{} 的教学课表:\n", m_name);
+    for (auto& course : _assignedCourses) {
+        s += format("{}   {}\n", course->info(), course->getScheduleInfo());
     }
     return s;
 }

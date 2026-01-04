@@ -14,7 +14,7 @@ export class Student
 {
 public:
     Student(string id, string name);
-    
+
     void enrollsIn(class Course* course);
     string coursesList();
     string info();
@@ -22,11 +22,12 @@ public:
     void addGrade(class Course* course, double grade);
     string getGrades();
     double getGradeForCourse(class Course* course);
+    string schedule();
 
 private:
     string m_name;
     string m_id;
-    
+
     vector<class Course*> _courses;
     vector<pair<class Course*, double>> _grades; // 保存课程和成绩的映射
 };
@@ -78,4 +79,13 @@ double Student::getGradeForCourse(Course* course)
         }
     }
     return -1.0; // 表示未评定成绩
+}
+
+string Student::schedule()
+{
+    auto s = format("{} 的课表:\n", m_name);
+    for (auto& course : _courses) {
+        s += format("{}   {}\n", course->info(), course->getScheduleInfo());
+    }
+    return s;
 }

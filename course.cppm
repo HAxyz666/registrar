@@ -9,6 +9,15 @@ import std;
 
 using std::string; using std::vector;
 
+// 课程时间安排结构体
+export struct RoomAndTime
+{
+    string timeSlot;   // 时间段
+    string classroom;  // 教室
+
+    RoomAndTime(string ts, string cr) : timeSlot(ts), classroom(cr) {}
+};
+
 export class Course
 {
 public:
@@ -18,6 +27,9 @@ public:
     string roster();
     string info();
     bool hasId(string id);
+    string getScheduleInfo() const;
+
+    friend class Secretary;
 private:
     string m_name;
     string m_id;
@@ -25,6 +37,7 @@ private:
     static int cm_totalCount;  // static data member
 
     vector<class Student*> _students;
+    vector<RoomAndTime> m_roomandtime;  // 课程时间安排
 };
 
 // ----- Partial implementation of class Course -----
@@ -34,6 +47,7 @@ int Course::cm_totalCount = 0; // initialize static data memeber
 Course::Course(string id, string name)
     : m_name(name)
     , m_id(id)
+    , m_roomandtime()
 {
     cm_totalCount++;
 }
@@ -55,4 +69,20 @@ string Course::info(){
 
 bool Course::hasId(string id){
     return id == m_id;
+}
+
+string Course::getScheduleInfo() const
+{
+    if (m_roomandtime.empty()) {
+        return "未排课";
+    }
+
+    string scheduleInfo = "";
+    for (std::size_t i = 0; i < m_roomandtime.size(); ++i) {
+        if (i > 0) {
+            scheduleInfo += "; ";
+        }
+        scheduleInfo += format("{} {}", m_roomandtime[i].timeSlot, m_roomandtime[i].classroom);
+    }
+    return scheduleInfo;
 }

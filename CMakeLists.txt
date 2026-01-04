@@ -20,6 +20,7 @@ set(MODULE_INTERFACE_FILES
     registrar.cppm
     student.cppm
     teacher.cppm
+    secretary.cppm
 )
 
 source_group("Module Interfaces" FILES ${MODULE_INTERFACE_FILES})
