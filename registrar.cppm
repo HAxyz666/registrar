@@ -8,6 +8,9 @@
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:secretary;
 
+// Change Log:
+//     [v1.1] licheng 2024051604016  2026-01-05 23:20:24
+//         * 添加secretaryCancelSchedule方法声明    实现secretaryCancelSchedule方法
 export module registrar;
 export import :student;
 export import :course;
@@ -37,6 +40,7 @@ public:
     void secretaryAssignTeacher(string secid, string tid, string cid);
     void secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom);
     void secretaryScheduledCourses(string secid);
+    void secretaryCancelSchedule(string secid, string cid, string timeSlot);
 
 private:
     Registrar();  // Prohibit creating objects directly
@@ -233,6 +237,17 @@ void Registrar::secretaryScheduledCourses(string secid){
     Secretary* secretary = findSecretaryById(secid);
     if (secretary) {
         print("{}\n", secretary->getScheduledCourses());
+    }
+}
+
+void Registrar::secretaryCancelSchedule(string secid, string cid, string timeSlot){
+    Secretary* secretary = findSecretaryById(secid);
+    Course* course = findCourseById(cid);
+
+    if (secretary && course) {
+        secretary->cancelCourseSchedule(course, timeSlot);
+    } else {
+        std::print("错误: 教学秘书或课程不存在！\n");
     }
 }
 

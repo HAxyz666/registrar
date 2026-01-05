@@ -23,6 +23,7 @@ public:
     virtual void secretaryAssignTeacher(string secid, string tid, string cid) = 0;
     virtual void secretarySetSchedule(string secid, string cid, string timeSlot, string classroom) = 0;
     virtual void secretaryScheduledCourses(string secid) = 0;
+    virtual void secretaryCancelSchedule(string secid, string cid, string timeSlot) = 0;
 }; // 导入registrar模块以使用回调函数类型
 
 
@@ -197,9 +198,10 @@ void UI::showSecretaryMenu() {
         std::println("2. 分配教师到课程");
         std::println("3. 设置课程时间安排");
         std::println("4. 查看已安排课程");
+        std::println("5. 取消课程时间安排");
         std::println("0. 返回主菜单");
 
-        int choice = getChoice("请选择: ", 0, 4);
+        int choice = getChoice("请选择: ", 0, 5);
 
         switch (choice) {
             case 1: {
@@ -234,6 +236,15 @@ void UI::showSecretaryMenu() {
                 std::string secid = getUserInput("请输入教学秘书ID: ");
                 if (_service) {
                     _service->secretaryScheduledCourses(secid);
+                }
+                break;
+            }
+            case 5: {
+                std::string secid = getUserInput("请输入教学秘书ID: ");
+                std::string cid = getUserInput("请输入课程ID: ");
+                std::string timeSlot = getUserInput("请输入要取消的时间段: ");
+                if (_service) {
+                    _service->secretaryCancelSchedule(secid, cid, timeSlot);
                 }
                 break;
             }

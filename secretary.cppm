@@ -9,6 +9,10 @@
 //         * added:setcourse,assigncouse;
 //  [v1.1] chao li (3042525170@qq.com)   2026-01-05
 //         * added:上课时间，上课地点冲突检测功能;
+
+// Change Log:
+//     [v1.2] licheng 2024051604016    2026-01-05 23:17:20
+//         * add:cancelCourseSchedule方法 实现取消排课逻辑；
 export module registrar:secretary;
 
 import std;
@@ -30,6 +34,7 @@ public:
     string getScheduledCourses();
     bool checkTimeConflict(class Teacher* teacher, string timeSlot);
     bool checkClassroomConflict(string timeSlot, string classroom);
+    void cancelCourseSchedule(class Course* course, string timeSlot);
 
 private:
     string m_name;
@@ -125,4 +130,23 @@ bool Secretary::checkClassroomConflict(string timeSlot, string classroom)
         }
     }
     return false; // 没有教室冲突
+}
+
+void Secretary::cancelCourseSchedule(Course* course, string timeSlot)
+{
+    // 在课程的时间安排中查找并删除指定时间段的安排
+    auto it = std::remove_if(course->m_roomandtime.begin(),
+                             course->m_roomandtime.end(),
+        [&](const RoomAndTime& schedule) {
+            return schedule.timeSlot == timeSlot;
+        });
+
+    if (it != course->m_roomandtime.end()) {
+        course->m_roomandtime.erase(it, course->m_roomandtime.end());
+        print("成功取消课程 {} 在时间段 {} 的安排\n",
+              course->info(), timeSlot);
+    } else {
+        print("错误: 课程 {} 在时间段 {} 没有安排\n",
+              course->info(), timeSlot);
+    }
 }
