@@ -31,9 +31,10 @@ public:
     void teacherSchedule(const string& tid);
     void studentGrades(const string& sid);
     void studentCoursesList(const string& sid);
+    //secretary function
     void secretaryCreateCourse(string secid, string cid, string cname);
     void secretaryAssignTeacher(string secid, string tid, string cid);
-    void secretarySetSchedule(string secid, string cid, string timeSlot, string classroom);
+    void secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom);
     void secretaryScheduledCourses(string secid);
 
 private:
@@ -175,6 +176,7 @@ void Registrar::studentGrades(const string& sid){
         print("{}\n", s->getGrades());
     }
 }
+//..........add seretary function...............
 
 void Registrar::secretaryCreateCourse(string secid, string cid, string cname){
     Secretary* secretary = findSecretaryById(secid);
@@ -203,14 +205,15 @@ void Registrar::secretaryAssignTeacher(string secid, string tid, string cid){
     }
 }
 
-void Registrar::secretarySetSchedule(string secid, string cid, string timeSlot, string classroom){
+void Registrar::secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom){
     Secretary* secretary = findSecretaryById(secid);
     Course* course = findCourseById(cid);
+    Teacher* teacher = findTeacherById(tid);
 
-    if (secretary && course) {
-        secretary->setCourseSchedule(course, timeSlot, classroom);
+    if (secretary && course && teacher) {
+        secretary->setCourseSchedule(course, teacher, timeSlot, classroom);
     } else {
-        std::print("错误: 教学秘书或课程不存在！\n");
+        std::print("错误: 教学秘书、课程或教师不存在！\n");
     }
 }
 

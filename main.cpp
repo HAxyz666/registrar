@@ -7,6 +7,8 @@
 
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:教学秘书排课功能测试
+//  [v1.1] chao li (3042525170@qq.com)   2026-01-05
+        // * added:冲突测试功能个
 import registrar;
 import std;
 
@@ -36,11 +38,11 @@ int main()
 
     std::println();
 
-    // Secretary sets course schedules
-    system().secretarySetSchedule("SEC001", "CS101", "周一 08:00-10:00", "A101");
-    system().secretarySetSchedule("SEC001", "MATH101", "周三 14:00-16:00", "B203");
-    system().secretarySetSchedule("SEC002", "CS201", "周二 10:00-12:00", "A102");
-    system().secretarySetSchedule("SEC002", "MATH101", "周四 08:00-10:00", "B201");
+    system().secretarySetSchedule("SEC001", "CS101", "T001", "周一 08:00-10:00", "A101");
+    system().secretarySetSchedule("SEC001", "MATH101", "T001", "周三 14:00-16:00", "B203");
+    system().secretarySetSchedule("SEC002", "CS201", "T002", "周二 10:00-12:00", "A102");
+    system().secretarySetSchedule("SEC002", "MATH101", "T003", "周四 08:00-10:00", "B201");
+
 
     std::println();
 
@@ -133,6 +135,25 @@ int main()
     system().teacherSchedule("T001");
     system().teacherSchedule("T002");
     system().teacherSchedule("T003");
+
+
+    std::println();
+    std::println("=== 冲突检查功能测试 ===");
+    std::println();
+
+    // 测试时间冲突 - T001已在周一 08:00-10:00有CS101课程
+    std::println("测试教师时间冲突：");
+    system().secretarySetSchedule("SEC001", "CS201", "T001", "周一 08:00-10:00", "A103");
+
+    // 测试教室冲突 - A101教室在周一 08:00-10:00已被CS101占用
+    std::println();
+    std::println("测试教室冲突：");
+    system().secretarySetSchedule("SEC001", "CS201", "T002", "周一 08:00-10:00", "A101");
+
+    // 测试正常排课 - 无冲突
+    std::println();
+    std::println("测试正常排课：");
+    system().secretarySetSchedule("SEC001", "CS201", "T002", "周五 14:00-16:00", "C201");
 
     return 0;
 }
