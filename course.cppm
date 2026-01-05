@@ -24,6 +24,7 @@ public:
     Course(string id, string name);
 
     bool acceptEnrollment(class Student* student);
+    void removeStudent(class Student* student);
     string roster();
     string info();
     bool hasId(string id);
@@ -60,6 +61,17 @@ bool Course::acceptEnrollment(Student *student){
         return true;
     }
     return false;
+}
+
+void Course::removeStudent(Student *student){
+    auto it = std::find(_students.begin(), _students.end(), student);
+    if (it != _students.end()) {
+        _students.erase(it);
+        print("\"{}\" 退课成功！目前选择该课程的人数: {}\n",
+              m_name, _students.size());
+    } else {
+        std::print("错误: 学生未选择该课程！\n");
+    }
 }
 
 string Course::info(){

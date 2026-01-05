@@ -4,6 +4,9 @@
 // Description:
 //     The interface and implementation of Student class are logically separated.
 
+// Change Log:
+//     [v0.1.1] Created: licheng  3530606868@qq.com    2026-01-05 22:58:03
+//
 export module registrar:student;
 import std;
 import :course;
@@ -16,6 +19,7 @@ public:
     Student(string id, string name);
 
     void enrollsIn(class Course* course);
+    void dropsFrom(class Course* course);
     string coursesList();
     string info();
     bool hasId(string id);
@@ -88,4 +92,23 @@ string Student::schedule()
         s += format("{}   {}\n", course->info(), course->getScheduleInfo());
     }
     return s;
+}
+
+void Student::dropsFrom(Course* course){
+    auto it = std::find(_courses.begin(), _courses.end(), course);
+    if (it != _courses.end()) {
+        _courses.erase(it);
+        course->removeStudent(this);
+
+        // 删除对应的成绩记录
+        auto gradeIt = std::remove_if(_grades.begin(), _grades.end(),
+            [course](const pair<Course*, double>& gradeEntry) {
+                return gradeEntry.first == course;
+            });
+        _grades.erase(gradeIt, _grades.end());
+
+        print("\"{}\" 退课成功！\n", course->info());
+    } else {
+        std::print("错误: 未选择该课程！\n");
+    }
 }

@@ -22,6 +22,7 @@ export class Registrar
 public:
     static Registrar& singleton();  //static function member
     void studentEnrollsInCourse(string sid, string cid);
+    void studentDropsFromCourse(string sid, string cid);
     void studentSchedule(const string& sid);
     void courseRoster(string cid);
     void initialize();
@@ -62,6 +63,17 @@ void Registrar::studentEnrollsInCourse(string sid, string cid){
 
     if (student && course) {
         student->enrollsIn(course);
+    }
+}
+
+void Registrar::studentDropsFromCourse(string sid, string cid){
+    Student* student = findStudentById(sid);
+    Course* course = findCourseById(cid);
+
+    if (student && course) {
+        student->dropsFrom(course);
+    } else {
+        std::print("错误: 学生或课程不存在！\n");
     }
 }
 
