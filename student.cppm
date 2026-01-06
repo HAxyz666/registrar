@@ -4,9 +4,6 @@
 // Description:
 //     The interface and implementation of Student class are logically separated.
 
-// Change Log:
-//     [v0.1.1] Created: licheng  3530606868@qq.com    2026-01-05 22:58:03
-//
 export module registrar:student;
 import std;
 import :course;
@@ -19,8 +16,8 @@ public:
     Student(string id, string name);
 
     void enrollsIn(class Course* course);
-    void dropsFrom(class Course* course);
     string coursesList();
+    void dropsFrom(Course* course);
     string info();
     bool hasId(string id);
     void addGrade(class Course* course, double grade);
@@ -34,6 +31,9 @@ private:
 
     vector<class Course*> _courses;
     vector<pair<class Course*, double>> _grades; // 保存课程和成绩的映射
+    
+    friend class DatabaseManager;
+    friend class Registrar;
 };
 
 // ----- Partial implementation of class Student -----
@@ -93,8 +93,8 @@ string Student::schedule()
     }
     return s;
 }
-
-void Student::dropsFrom(Course* course){
+void Student::dropsFrom(Course* course)
+{
     auto it = std::find(_courses.begin(), _courses.end(), course);
     if (it != _courses.end()) {
         _courses.erase(it);

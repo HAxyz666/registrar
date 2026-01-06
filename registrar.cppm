@@ -8,14 +8,12 @@
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:secretary;
 
-// Change Log:
-//     [v1.1] licheng 2024051604016  2026-01-05 23:20:24
-//         * 添加secretaryCancelSchedule方法声明    实现secretaryCancelSchedule方法
 export module registrar;
 export import :student;
 export import :course;
 export import :teacher;
 export import :secretary;
+export import :ui;
 
 import std;
 using std::string; using std::vector;
@@ -24,8 +22,8 @@ export class Registrar
 {
 public:
     static Registrar& singleton();  //static function member
-    void studentEnrollsInCourse(string sid, string cid);
     void studentDropsFromCourse(string sid, string cid);
+    void studentEnrollsInCourse(string sid, string cid);
     void studentSchedule(const string& sid);
     void courseRoster(string cid);
     void initialize();
@@ -41,6 +39,9 @@ public:
     void secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom);
     void secretaryScheduledCourses(string secid);
     void secretaryCancelSchedule(string secid, string cid, string timeSlot);
+    
+    // UI交互方法
+    int exec();
 
 private:
     Registrar();  // Prohibit creating objects directly
@@ -53,21 +54,20 @@ private:
     vector<class Student*> _students;
     vector<class Teacher*> _teachers;
     vector<class Secretary*> _secretaries;
+    
+    // UI交互处理方法
+    void handleStudentLogin(class UI& ui);
+    void handleTeacherLogin(class UI& ui);
+    void handleSecretaryLogin(class UI& ui);
+    void handleStudentFunctions(class UI& ui);
+    void handleTeacherFunctions(class UI& ui);
+    void handleSecretaryFunctions(class UI& ui);
 };
 
 // ----- The implementaion of class Registrar -----
 Registrar &Registrar::singleton(){
     static Registrar instance;
     return instance;
-}
-
-void Registrar::studentEnrollsInCourse(string sid, string cid){
-    Student* student = findStudentById(sid);
-    Course* course = findCourseById(cid);
-
-    if (student && course) {
-        student->enrollsIn(course);
-    }
 }
 
 void Registrar::studentDropsFromCourse(string sid, string cid){
@@ -78,6 +78,15 @@ void Registrar::studentDropsFromCourse(string sid, string cid){
         student->dropsFrom(course);
     } else {
         std::print("错误: 学生或课程不存在！\n");
+    }
+}
+
+void Registrar::studentEnrollsInCourse(string sid, string cid){
+    Student* student = findStudentById(sid);
+    Course* course = findCourseById(cid);
+
+    if (student && course) {
+        student->enrollsIn(course);
     }
 }
 
@@ -200,9 +209,14 @@ void Registrar::secretaryCreateCourse(string secid, string cid, string cname){
 
     if (secretary) {
         if (course) {
+            print("警告: 课程 {} 已存在！\n", cid);
             secretary->createCourse(course);
         } else {
-            print("错误: 课程 {} 不存在！\n", cid);
+            // 创建新课程
+            course = new Course(cid, cname);
+            _courses.push_back(course);
+            secretary->createCourse(course);
+            print("课程 {} 创建成功！\n", cid);
         }
     } else {
         print("错误: 教学秘书 {} 不存在！\n", secid);
@@ -275,4 +289,275 @@ string Student::coursesList()
         s += "\n";
     }
     return s;
+}
+
+// ----- UI交互实现 -----
+int Registrar::exec()
+{
+    auto& ui = UI::singleton();
+    
+    while (true) {
+        ui.showMainMenu();
+        
+        int choice = ui.getMenuChoice("请选择登录类型 (0-3): ", 3);
+        
+        switch (choice) {
+            case 1:
+                handleStudentLogin(ui);
+                break;
+            case 2:
+                handleTeacherLogin(ui);
+                break;
+            case 3:
+                handleSecretaryLogin(ui);
+                break;
+            case 0:
+                print("感谢使用教务管理系统，再见！\n");
+                return 0;
+            default:
+                ui.showError("无效选择，请重新输入！");
+                ui.pauseScreen();
+                break;
+        }
+    }
+    return 0;
+}
+
+void Registrar::handleStudentLogin(UI& ui)
+{
+    // 直接设置用户信息并进入学生功能菜单
+    ui.setCurrentUser("student", "学生");
+    handleStudentFunctions(ui);
+}
+
+void Registrar::handleTeacherLogin(UI& ui)
+{
+    // 直接设置用户信息并进入教师功能菜单
+    ui.setCurrentUser("teacher", "教师");
+    handleTeacherFunctions(ui);
+}
+
+void Registrar::handleSecretaryLogin(UI& ui)
+{
+    // 直接设置用户信息并进入秘书功能菜单
+    ui.setCurrentUser("secretary", "教学秘书");
+    handleSecretaryFunctions(ui);
+}
+
+void Registrar::handleStudentFunctions(UI& ui)
+{
+    while (ui.getCurrentUserType() == "student") {
+        ui.showStudentMenu();
+        
+        int choice = ui.getMenuChoice("请选择功能 (0-5): ", 5);
+        
+        switch (choice) {
+            case 1:
+                ui.clearScreen();
+                print("========================================\n");
+                print("        课程列表\n");
+                print("========================================\n");
+                studentCoursesList(ui.getCurrentUserId());
+                ui.pauseScreen();
+                break;
+                
+            case 2:
+                ui.clearScreen();
+                print("========================================\n");
+                print("        个人课表\n");
+                print("========================================\n");
+                studentSchedule(ui.getCurrentUserId());
+                ui.pauseScreen();
+                break;
+                
+            case 3:
+                ui.clearScreen();
+                print("========================================\n");
+                print("        成绩查询\n");
+                print("========================================\n");
+                studentGrades(ui.getCurrentUserId());
+                ui.pauseScreen();
+                break;
+                
+            case 4:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        选修课程\n");
+                    print("========================================\n");
+                    string courseId = ui.getUserInput("请输入要选修的课程ID: ");
+                    studentEnrollsInCourse(ui.getCurrentUserId(), courseId);
+                    ui.showMessage("选课操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 5:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        取消选课\n");
+                    print("========================================\n");
+                    string courseId = ui.getUserInput("请输入要取消的课程ID: ");
+                    studentDropsFromCourse(ui.getCurrentUserId(), courseId);
+                    ui.showMessage("取消选课操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 0:
+                ui.clearCurrentUser();
+                return;
+        }
+    }
+}
+
+void Registrar::handleTeacherFunctions(UI& ui)
+{
+    while (ui.getCurrentUserType() == "teacher") {
+        ui.showTeacherMenu();
+        
+        int choice = ui.getMenuChoice("请选择功能 (0-4): ", 4);
+        
+        switch (choice) {
+            case 1:
+                ui.clearScreen();
+                print("========================================\n");
+                print("        授课课程列表\n");
+                print("========================================\n");
+                teacherTeachingCourses(ui.getCurrentUserId());
+                ui.pauseScreen();
+                break;
+                
+            case 2:
+                ui.clearScreen();
+                print("========================================\n");
+                print("        个人课表\n");
+                print("========================================\n");
+                teacherSchedule(ui.getCurrentUserId());
+                ui.pauseScreen();
+                break;
+                
+            case 3:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        查看课程学生名单\n");
+                    print("========================================\n");
+                    string courseId = ui.getUserInput("请输入课程ID: ");
+                    courseRoster(courseId);
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 4:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        给学生打分\n");
+                    print("========================================\n");
+                    string studentId = ui.getUserInput("请输入学生ID: ");
+                    string courseId = ui.getUserInput("请输入课程ID: ");
+                    print("请输入成绩: ");
+                    double grade;
+                    std::cin >> grade;
+                    teacherGradeStudent(ui.getCurrentUserId(), studentId, courseId, grade);
+                    ui.showMessage("打分操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 0:
+                ui.clearCurrentUser();
+                return;
+        }
+    }
+}
+
+void Registrar::handleSecretaryFunctions(UI& ui)
+{
+    while (ui.getCurrentUserType() == "secretary") {
+        ui.showSecretaryMenu();
+        
+        int choice = ui.getMenuChoice("请选择功能 (0-5): ", 5);
+        
+        switch (choice) {
+            case 1:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        创建课程\n");
+                    print("========================================\n");
+                    string courseId = ui.getUserInput("请输入课程ID: ");
+                    string courseName = ui.getUserInput("请输入课程名称: ");
+                    secretaryCreateCourse(ui.getCurrentUserId(), courseId, courseName);
+                    ui.showMessage("课程创建操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 2:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        分配教师到课程\n");
+                    print("========================================\n");
+                    string teacherId = ui.getUserInput("请输入教师ID: ");
+                    string courseId = ui.getUserInput("请输入课程ID: ");
+                    secretaryAssignTeacher(ui.getCurrentUserId(), teacherId, courseId);
+                    ui.showMessage("教师分配操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 3:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        设置课程时间表\n");
+                    print("========================================\n");
+                    string courseId = ui.getUserInput("请输入课程ID: ");
+                    string teacherId = ui.getUserInput("请输入教师ID: ");
+                    print("请输入时间段: ");
+                    string timeSlot;
+                    std::cin.ignore();
+                    std::getline(std::cin, timeSlot);
+                    string classroom = ui.getUserInput("请输入教室: ");
+                    secretarySetSchedule(ui.getCurrentUserId(), courseId, teacherId, timeSlot, classroom);
+                    ui.showMessage("时间表设置操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 4:
+                ui.clearScreen();
+                print("========================================\n");
+                print("        已排课程列表\n");
+                print("========================================\n");
+                secretaryScheduledCourses(ui.getCurrentUserId());
+                ui.pauseScreen();
+                break;
+                
+            case 5:
+                {
+                    ui.clearScreen();
+                    print("========================================\n");
+                    print("        取消排课\n");
+                    print("========================================\n");
+                    string courseId = ui.getUserInput("请输入要取消排课的课程ID: ");
+                    print("请输入要取消的时间段: ");
+                    string timeSlot;
+                    std::cin.ignore();
+                    std::getline(std::cin, timeSlot);
+                    secretaryCancelSchedule(ui.getCurrentUserId(), courseId, timeSlot);
+                    ui.showMessage("取消排课操作完成。");
+                    ui.pauseScreen();
+                }
+                break;
+                
+            case 0:
+                ui.clearCurrentUser();
+                return;
+        }
+    }
 }

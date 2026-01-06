@@ -17,18 +17,25 @@ set(MODULE_INTERFACE_FILES
     #${MODULE_LIB_DIR1}/utils.cppm         #添加模块库的模块接口单元
     #math.cppm                             # 模块接口单元
     course.cppm
-    registrar.cppm
+
     student.cppm
     teacher.cppm
     secretary.cppm
+    UI.cppm
 )
 
+set(CONTRAL_FILES
+    registrar.cppm
+
+
+)
 source_group("Module Interfaces" FILES ${MODULE_INTERFACE_FILES})
+source_group("Contral File" FILES ${CONTRAL_FILES})
 target_sources(REGISTRAR  PRIVATE FILE_SET cxx_modules TYPE CXX_MODULES
     BASE_DIRS                              # 配置BASE_DIRS，用于组织构建输出目录，以便构建不同目录中(同名的)模块文件.
         #${MODULE_LIB_DIR1}
         ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${MODULE_INTERFACE_FILES}
+    FILES ${MODULE_INTERFACE_FILES} ${CONTRAL_FILES}
 )
 target_compile_features(REGISTRAR PRIVATE cxx_std_23)
 

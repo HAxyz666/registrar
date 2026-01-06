@@ -7,12 +7,6 @@
 
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:setcourse,assigncouse;
-//  [v1.1] chao li (3042525170@qq.com)   2026-01-05
-//         * added:上课时间，上课地点冲突检测功能;
-
-// Change Log:
-//     [v1.2] licheng 2024051604016    2026-01-05 23:17:20
-//         * add:cancelCourseSchedule方法 实现取消排课逻辑；
 export module registrar:secretary;
 
 import std;
@@ -34,7 +28,7 @@ public:
     string getScheduledCourses();
     bool checkTimeConflict(class Teacher* teacher, string timeSlot);
     bool checkClassroomConflict(string timeSlot, string classroom);
-    void cancelCourseSchedule(class Course* course, string timeSlot);
+    void cancelCourseSchedule(Course* course, string timeSlot);
 
 private:
     string m_name;
@@ -42,6 +36,9 @@ private:
     static int sm_totalCount;  // static data member
 
     vector<class Course*> _createdCourses;
+    
+    friend class DatabaseManager;
+    friend class Registrar;
 };
 
 // ----- Partial implementation of class Secretary -----
@@ -84,13 +81,13 @@ void Secretary::setCourseSchedule(Course* course, Teacher* teacher, string timeS
         print("错误: 教室 {} 在时间段 {} 已被其他课程占用！\n", classroom, timeSlot);
         return;
     }
-
+    
     // 检查教师时间冲突
     if (checkTimeConflict(teacher, timeSlot)) {
         print("错误: 教师 {} 在时间段 {} 已有其他课程安排！\n", teacher->info(), timeSlot);
         return;
     }
-
+    
     // 如果没有冲突，则安排课程
     course->m_roomandtime.emplace_back(timeSlot, classroom);
     print("教学秘书 {} 为课程 {} 安排时间: {}, 教室: {}\n", m_name, course->info(), timeSlot, classroom);
@@ -131,7 +128,6 @@ bool Secretary::checkClassroomConflict(string timeSlot, string classroom)
     }
     return false; // 没有教室冲突
 }
-
 void Secretary::cancelCourseSchedule(Course* course, string timeSlot)
 {
     // 在课程的时间安排中查找并删除指定时间段的安排

@@ -24,7 +24,7 @@ public:
     Course(string id, string name);
 
     bool acceptEnrollment(class Student* student);
-    void removeStudent(class Student* student);
+    void removeStudent(Student *student);
     string roster();
     string info();
     bool hasId(string id);
@@ -39,6 +39,9 @@ private:
 
     vector<class Student*> _students;
     vector<RoomAndTime> m_roomandtime;  // 课程时间安排
+    
+    friend class DatabaseManager;
+    friend class Registrar;
 };
 
 // ----- Partial implementation of class Course -----
@@ -53,17 +56,8 @@ Course::Course(string id, string name)
     cm_totalCount++;
 }
 
-bool Course::acceptEnrollment(Student *student){
-    if(_students.size() < 80){  // 假定某个课程的最大人数为80
-        _students.push_back(student);
-        print("\"{}\" 选课成功！目前选择该课程的人数: {}\n",
-              m_name, _students.size());
-        return true;
-    }
-    return false;
-}
-
-void Course::removeStudent(Student *student){
+void Course::removeStudent(Student *student)
+{
     auto it = std::find(_students.begin(), _students.end(), student);
     if (it != _students.end()) {
         _students.erase(it);
@@ -72,6 +66,15 @@ void Course::removeStudent(Student *student){
     } else {
         std::print("错误: 学生未选择该课程！\n");
     }
+}
+bool Course::acceptEnrollment(Student *student){
+    if(_students.size() < 80){  // 假定某个课程的最大人数为80
+        _students.push_back(student);
+        print("\"{}\" 选课成功！目前选择该课程的人数: {}\n",
+              m_name, _students.size());
+        return true;
+    }
+    return false;
 }
 
 string Course::info(){
