@@ -325,23 +325,74 @@ int Registrar::exec()
 
 void Registrar::handleStudentLogin(UI& ui)
 {
-    // 直接设置用户信息并进入学生功能菜单
-    ui.setCurrentUser("student", "学生");
-    handleStudentFunctions(ui);
+    ui.clearScreen();
+    print("========================================\n");
+    print("          学生登录\n");
+    print("========================================\n");
+    
+    string studentId = ui.getUserInput("请输入学生ID (输入0返回主菜单): ");
+    
+    if (studentId == "0") {
+        return;
+    }
+    
+    if (findStudentById(studentId)) {
+        ui.setCurrentUser("student", studentId);
+        ui.showMessage("登录成功！欢迎，学生 " + studentId);
+        ui.pauseScreen();
+        handleStudentFunctions(ui);
+    } else {
+        ui.showError("学生ID不存在或密码错误。");
+        ui.pauseScreen();
+    }
 }
 
 void Registrar::handleTeacherLogin(UI& ui)
 {
-    // 直接设置用户信息并进入教师功能菜单
-    ui.setCurrentUser("teacher", "教师");
-    handleTeacherFunctions(ui);
+    ui.clearScreen();
+    print("========================================\n");
+    print("          教师登录\n");
+    print("========================================\n");
+    
+    string teacherId = ui.getUserInput("请输入教师ID (输入0返回主菜单): ");
+    
+    if (teacherId == "0") {
+        return;
+    }
+    
+    if (findTeacherById(teacherId)) {
+        ui.setCurrentUser("teacher", teacherId);
+        ui.showMessage("登录成功！欢迎，教师 " + teacherId);
+        ui.pauseScreen();
+        handleTeacherFunctions(ui);
+    } else {
+        ui.showError("教师ID不存在或密码错误。");
+        ui.pauseScreen();
+    }
 }
 
 void Registrar::handleSecretaryLogin(UI& ui)
 {
-    // 直接设置用户信息并进入秘书功能菜单
-    ui.setCurrentUser("secretary", "教学秘书");
-    handleSecretaryFunctions(ui);
+    ui.clearScreen();
+    print("========================================\n");
+    print("        教学秘书登录\n");
+    print("========================================\n");
+    
+    string secretaryId = ui.getUserInput("请输入教学秘书ID (输入0返回主菜单): ");
+    
+    if (secretaryId == "0") {
+        return;
+    }
+    
+    if (findSecretaryById(secretaryId)) {
+        ui.setCurrentUser("secretary", secretaryId);
+        ui.showMessage("登录成功！欢迎，教学秘书 " + secretaryId);
+        ui.pauseScreen();
+        handleSecretaryFunctions(ui);
+    } else {
+        ui.showError("教学秘书ID不存在或密码错误。");
+        ui.pauseScreen();
+    }
 }
 
 void Registrar::handleStudentFunctions(UI& ui)

@@ -1,9 +1,9 @@
 // Module
-// File: UI.cppm   Version: 0.1.0   License: AGPLv3
-// Created:licheng    id:2024051604016    2026-01-06 20:26:03
-// Description:第一版ui界面
-//
-
+// File: UI.cppm   Version: 0.1.1  License: AGPLv3
+// Created:licheng 2024051604016   1月8日
+// Description:
+//1.ui界面模块，提供交互式菜单系统
+//2.验证初始化功能
 export module registrar:ui;
 
 import std;
@@ -158,6 +158,7 @@ void UI::showStudentMenu()
     print("========================================\n");
     print("        学生功能菜单\n");
     print("========================================\n");
+    print("当前用户: {}\n", currentUserId);
     print("1. 查看课程列表\n");
     print("2. 查看个人课表\n");
     print("3. 查看成绩\n");
@@ -173,6 +174,7 @@ void UI::showTeacherMenu()
     print("========================================\n");
     print("        教师功能菜单\n");
     print("========================================\n");
+    print("当前用户: {}\n", currentUserId);
     print("1. 查看授课课程列表\n");
     print("2. 查看个人课表\n");
     print("3. 查看课程学生名单\n");
@@ -187,6 +189,7 @@ void UI::showSecretaryMenu()
     print("========================================\n");
     print("      教学秘书功能菜单\n");
     print("========================================\n");
+    print("当前用户: {}\n", currentUserId);
     print("1. 创建课程\n");
     print("2. 分配教师到课程\n");
     print("3. 设置课程时间表\n");
