@@ -7,54 +7,71 @@
 
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:secretary;
+//  [v2.0] chao li (3042525170@qq.com)   2026-01-09
+//         * added:用Broker代管者模式;
 
 export module registrar;
+
+import std;
+
+// 导出所有模块分区
+export import :broker_factory;
+export import :student_broker;
+export import :course_broker;
+export import :teacher_broker;
+export import :secretary_broker;
 export import :student;
 export import :course;
 export import :teacher;
 export import :secretary;
 export import :ui;
 
-import std;
-using std::string; using std::vector;
+using std::string;
+using std::vector;
+using std::shared_ptr;
+using std::make_shared;
 
 export class Registrar
 {
 public:
-    static Registrar& singleton();  //static function member
+    static Registrar& singleton();
+
+    // 学生相关方法（委托给StudentBroker）
     void studentDropsFromCourse(string sid, string cid);
     void studentEnrollsInCourse(string sid, string cid);
     void studentSchedule(const string& sid);
     void courseRoster(string cid);
-    void initialize();
+    void studentCoursesList(const string& sid);
+    void studentGrades(const string& sid);
+
+    // 教师相关方法（委托给TeacherBroker）
     void assignTeacherToCourse(string tid, string cid);
     void teacherGradeStudent(string tid, string sid, string cid, double grade);
     void teacherTeachingCourses(string tid);
     void teacherSchedule(const string& tid);
-    void studentGrades(const string& sid);
-    void studentCoursesList(const string& sid);
-    //secretary function
+
+    // 教学秘书相关方法（委托给SecretaryBroker）
     void secretaryCreateCourse(string secid, string cid, string cname);
     void secretaryAssignTeacher(string secid, string tid, string cid);
     void secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom);
     void secretaryScheduledCourses(string secid);
     void secretaryCancelSchedule(string secid, string cid, string timeSlot);
-    
+
+    // 系统初始化
+    void initialize();
+
     // UI交互方法
     int exec();
 
 private:
-    Registrar();  // Prohibit creating objects directly
-    class Student* findStudentById(const string& id);
-    class Course* findCourseById(const string& id);
-    class Teacher* findTeacherById(const string& id);
-    class Secretary* findSecretaryById(const string& id);
+    Registrar();
 
-    vector<class Course*> _courses;
-    vector<class Student*> _students;
-    vector<class Teacher*> _teachers;
-    vector<class Secretary*> _secretaries;
-    
+    // Broker成员变量（直接创建）
+    shared_ptr<StudentBroker> _studentBroker;
+    shared_ptr<CourseBroker> _courseBroker;
+    shared_ptr<TeacherBroker> _teacherBroker;
+    shared_ptr<SecretaryBroker> _secretaryBroker;
+
     // UI交互处理方法
     void handleStudentLogin(class UI& ui);
     void handleTeacherLogin(class UI& ui);
@@ -64,243 +81,136 @@ private:
     void handleSecretaryFunctions(class UI& ui);
 };
 
-// ----- The implementaion of class Registrar -----
+// ----- The implementation of class Registrar -----
+
 Registrar &Registrar::singleton(){
     static Registrar instance;
     return instance;
 }
 
-void Registrar::studentDropsFromCourse(string sid, string cid){
-    Student* student = findStudentById(sid);
-    Course* course = findCourseById(cid);
-
-    if (student && course) {
-        student->dropsFrom(course);
-    } else {
-        std::print("错误: 学生或课程不存在！\n");
-    }
-}
-
-void Registrar::studentEnrollsInCourse(string sid, string cid){
-    Student* student = findStudentById(sid);
-    Course* course = findCourseById(cid);
-
-    if (student && course) {
-        student->enrollsIn(course);
-    }
-}
-
-void Registrar::studentSchedule(const string &sid)
-{
-    auto s = findStudentById(sid);
-    if (s) {
-        print("{}\n", s->schedule());
-    }
-}
-
-void Registrar::studentCoursesList(const string &sid)
-{
-    auto s = findStudentById(sid);
-    print("{}\n",s->coursesList());
-}
-
-void Registrar::courseRoster(string cid){
-    auto c = findCourseById(cid);
-    print("{}\n", c->roster());
-}
-
 void Registrar::initialize(){
-    _students.push_back(new Student("S001", "Thomas"));
-    _students.push_back(new Student("S002", "Jerry"));
-    _students.push_back(new Student("S003", "Baker"));
-    _students.push_back(new Student("S004", "Tom"));
-    _students.push_back(new Student("S005", "Musk"));
+    // 直接创建Broker实例（简化版工厂模式）
+    _studentBroker = make_shared<StudentBroker>();
+    _courseBroker = make_shared<CourseBroker>();
+    _teacherBroker = make_shared<TeacherBroker>();
+    _secretaryBroker = make_shared<SecretaryBroker>();
 
-    _courses.push_back(new Course("CS101", "C Programming"));
-    _courses.push_back(new Course("CS201", "Data structure"));
-    _courses.push_back(new Course("MATH101", "Advanced Math"));
-
-    _teachers.push_back(new Teacher("T001", "Dr. Smith"));
-    _teachers.push_back(new Teacher("T002", "Dr. Johnson"));
-    _teachers.push_back(new Teacher("T003", "Dr. Brown"));
-
-    _secretaries.push_back(new Secretary("SEC001", "Ms. Wang"));
-    _secretaries.push_back(new Secretary("SEC002", "Mr. Li"));
+    // 初始化各个Broker
+    _studentBroker->initialize();
+    _courseBroker->initialize();
+    _teacherBroker->initialize();
+    _secretaryBroker->initialize();
 }
 
 Registrar::Registrar(){}
 
-Student *Registrar::findStudentById(const string &id){
-    for (auto& student :_students) {
-        if (student->hasId(id))
-            return student;
-    }
-    return nullptr;
+// ----- 学生相关方法（委托给StudentBroker） -----
+
+void Registrar::studentDropsFromCourse(string sid, string cid){
+    Student* student = _studentBroker->findStudentById(sid);
+    Course* course = _courseBroker->findCourseById(cid);
+    _studentBroker->studentDropsFromCourse(sid, cid, course);
 }
 
-Course *Registrar::findCourseById(const string &id){
-    for (auto& course : _courses) {
-        if (course->hasId(id) )
-            return course;
-    }
-    return nullptr;
+void Registrar::studentEnrollsInCourse(string sid, string cid){
+    Student* student = _studentBroker->findStudentById(sid);
+    Course* course = _courseBroker->findCourseById(cid);
+    _studentBroker->studentEnrollsInCourse(sid, cid, course);
 }
 
-Teacher *Registrar::findTeacherById(const string& id){
-    for (auto& teacher : _teachers) {
-        if (teacher->hasId(id))
-            return teacher;
-    }
-    return nullptr;
+void Registrar::studentSchedule(const string& sid){
+    print("{}", _studentBroker->studentSchedule(sid));
 }
 
-Secretary *Registrar::findSecretaryById(const string& id){
-    for (auto& secretary : _secretaries) {
-        if (secretary->hasId(id))
-            return secretary;
-    }
-    return nullptr;
+void Registrar::studentCoursesList(const string& sid){
+    print("{}", _studentBroker->studentCoursesList(sid));
 }
 
-void Registrar::assignTeacherToCourse(string tid, string cid){
-    Teacher* teacher = findTeacherById(tid);
-    Course* course = findCourseById(cid);
-
-    if (teacher && course) {
-        teacher->assignCourse(course);
-    }
-}
-
-void Registrar::teacherGradeStudent(string tid, string sid, string cid, double grade){
-    Teacher* teacher = findTeacherById(tid);
-    Student* student = findStudentById(sid);
-    Course* course = findCourseById(cid);
-
-    if (teacher && student && course) {
-        teacher->gradeStudent(student, course, grade);
-    }
-}
-
-void Registrar::teacherTeachingCourses(string tid){
-    Teacher* teacher = findTeacherById(tid);
-    if (teacher) {
-        print("{}\n", teacher->getTeachingCourses());
-    }
-}
-
-void Registrar::teacherSchedule(const string& tid){
-    Teacher* teacher = findTeacherById(tid);
-    if (teacher) {
-        print("{}\n", teacher->schedule());
-    }
+void Registrar::courseRoster(string cid){
+    print("{}", _courseBroker->courseRoster(cid));
 }
 
 void Registrar::studentGrades(const string& sid){
-    auto s = findStudentById(sid);
-    if (s) {
-        print("{}\n", s->getGrades());
-    }
-}
-//..........add seretary function...............
-
-void Registrar::secretaryCreateCourse(string secid, string cid, string cname){
-    Secretary* secretary = findSecretaryById(secid);
-    Course* course = findCourseById(cid);
-
-    if (secretary) {
-        if (course) {
-            print("警告: 课程 {} 已存在！\n", cid);
-            secretary->createCourse(course);
-        } else {
-            // 创建新课程
-            course = new Course(cid, cname);
-            _courses.push_back(course);
-            secretary->createCourse(course);
-            print("课程 {} 创建成功！\n", cid);
-        }
-    } else {
-        print("错误: 教学秘书 {} 不存在！\n", secid);
-    }
+    print("{}", _studentBroker->studentGrades(sid));
 }
 
-void Registrar::secretaryAssignTeacher(string secid, string tid, string cid){
-    Secretary* secretary = findSecretaryById(secid);
-    Teacher* teacher = findTeacherById(tid);
-    Course* course = findCourseById(cid);
-
-    if (secretary && teacher && course) {
-        secretary->assignTeacherToCourse(teacher, course);
-    } else {
-        std::print("错误: 教学秘书、教师或课程不存在！\n");
-    }
-}
-
-void Registrar::secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom){
-    Secretary* secretary = findSecretaryById(secid);
-    Course* course = findCourseById(cid);
-    Teacher* teacher = findTeacherById(tid);
-
-    if (secretary && course && teacher) {
-        secretary->setCourseSchedule(course, teacher, timeSlot, classroom);
-    } else {
-        std::print("错误: 教学秘书、课程或教师不存在！\n");
-    }
-}
-
-void Registrar::secretaryScheduledCourses(string secid){
-    Secretary* secretary = findSecretaryById(secid);
-    if (secretary) {
-        print("{}\n", secretary->getScheduledCourses());
-    }
-}
-
-void Registrar::secretaryCancelSchedule(string secid, string cid, string timeSlot){
-    Secretary* secretary = findSecretaryById(secid);
-    Course* course = findCourseById(cid);
-
-    if (secretary && course) {
-        secretary->cancelCourseSchedule(course, timeSlot);
-    } else {
-        std::print("错误: 教学秘书或课程不存在！\n");
-    }
-}
-
-// ----- Implementation of Student-Course object interactions -----
-
-void Student::enrollsIn(Course *course){
-    if(course->acceptEnrollment(this))
-        _courses.push_back(course);
-}
-
+// ----- Course::roster 的实现 -----
 string Course::roster(){
     auto rst = format("{} selected by the students:\n", m_name);
     for (auto s : _students) {
-        rst += s->info(); // 课程对象委托学生对象自己输出相关信息
+        rst += s->info();
         rst += "\n";
     }
     return rst;
 }
 
-string Student::coursesList()
-{
-    auto s = format("{}'s courses:\n", m_name);
-    for(auto &c: _courses){
-        s += c->info();
-        s += "\n";
-    }
-    return s;
+// ----- 教师相关方法（委托给TeacherBroker） -----
+
+void Registrar::assignTeacherToCourse(string tid, string cid){
+    Teacher* teacher = _teacherBroker->findTeacherById(tid);
+    Course* course = _courseBroker->findCourseById(cid);
+    _teacherBroker->assignTeacherToCourse(tid, cid, teacher, course);
 }
 
+void Registrar::teacherGradeStudent(string tid, string sid, string cid, double grade){
+    Teacher* teacher = _teacherBroker->findTeacherById(tid);
+    Student* student = _studentBroker->findStudentById(sid);
+    Course* course = _courseBroker->findCourseById(cid);
+    _teacherBroker->teacherGradeStudent(tid, sid, cid, teacher, student, course, grade);
+}
+
+void Registrar::teacherTeachingCourses(string tid){
+    print("{}", _teacherBroker->teacherTeachingCourses(tid));
+}
+
+void Registrar::teacherSchedule(const string& tid){
+    print("{}", _teacherBroker->teacherSchedule(tid));
+}
+
+// ----- 教学秘书相关方法（委托给SecretaryBroker） -----
+
+void Registrar::secretaryCreateCourse(string secid, string cid, string cname){
+    Secretary* secretary = _secretaryBroker->findSecretaryById(secid);
+    Course* course = _courseBroker->createCourse(cid, cname);
+    _secretaryBroker->secretaryCreateCourse(secid, cid, cname, secretary, course);
+}
+
+void Registrar::secretaryAssignTeacher(string secid, string tid, string cid){
+    Secretary* secretary = _secretaryBroker->findSecretaryById(secid);
+    Teacher* teacher = _teacherBroker->findTeacherById(tid);
+    Course* course = _courseBroker->findCourseById(cid);
+    _secretaryBroker->secretaryAssignTeacher(secid, tid, cid, secretary, teacher, course);
+}
+
+void Registrar::secretarySetSchedule(string secid, string cid, string tid, string timeSlot, string classroom){
+    Secretary* secretary = _secretaryBroker->findSecretaryById(secid);
+    Course* course = _courseBroker->findCourseById(cid);
+    Teacher* teacher = _teacherBroker->findTeacherById(tid);
+    _secretaryBroker->secretarySetSchedule(secid, cid, tid, timeSlot, classroom, secretary, course, teacher);
+}
+
+void Registrar::secretaryScheduledCourses(string secid){
+    print("{}", _secretaryBroker->secretaryScheduledCourses(secid));
+}
+
+void Registrar::secretaryCancelSchedule(string secid, string cid, string timeSlot){
+    Secretary* secretary = _secretaryBroker->findSecretaryById(secid);
+    Course* course = _courseBroker->findCourseById(cid);
+    _secretaryBroker->secretaryCancelSchedule(secid, cid, timeSlot, secretary, course);
+}
+
+
 // ----- UI交互实现 -----
+
 int Registrar::exec()
 {
     auto& ui = UI::singleton();
-    
+
     while (true) {
         ui.showMainMenu();
-        
+
         int choice = ui.getMenuChoice("请选择登录类型 (0-3): ", 3);
-        
+
         switch (choice) {
             case 1:
                 handleStudentLogin(ui);
@@ -329,14 +239,14 @@ void Registrar::handleStudentLogin(UI& ui)
     print("========================================\n");
     print("          学生登录\n");
     print("========================================\n");
-    
+
     string studentId = ui.getUserInput("请输入学生ID (输入0返回主菜单): ");
-    
+
     if (studentId == "0") {
         return;
     }
-    
-    if (findStudentById(studentId)) {
+
+    if (_studentBroker->findStudentById(studentId)) {
         ui.setCurrentUser("student", studentId);
         ui.showMessage("登录成功！欢迎，学生 " + studentId);
         ui.pauseScreen();
@@ -353,14 +263,14 @@ void Registrar::handleTeacherLogin(UI& ui)
     print("========================================\n");
     print("          教师登录\n");
     print("========================================\n");
-    
+
     string teacherId = ui.getUserInput("请输入教师ID (输入0返回主菜单): ");
-    
+
     if (teacherId == "0") {
         return;
     }
-    
-    if (findTeacherById(teacherId)) {
+
+    if (_teacherBroker->findTeacherById(teacherId)) {
         ui.setCurrentUser("teacher", teacherId);
         ui.showMessage("登录成功！欢迎，教师 " + teacherId);
         ui.pauseScreen();
@@ -377,14 +287,14 @@ void Registrar::handleSecretaryLogin(UI& ui)
     print("========================================\n");
     print("        教学秘书登录\n");
     print("========================================\n");
-    
+
     string secretaryId = ui.getUserInput("请输入教学秘书ID (输入0返回主菜单): ");
-    
+
     if (secretaryId == "0") {
         return;
     }
-    
-    if (findSecretaryById(secretaryId)) {
+
+    if (_secretaryBroker->findSecretaryById(secretaryId)) {
         ui.setCurrentUser("secretary", secretaryId);
         ui.showMessage("登录成功！欢迎，教学秘书 " + secretaryId);
         ui.pauseScreen();
@@ -399,9 +309,9 @@ void Registrar::handleStudentFunctions(UI& ui)
 {
     while (ui.getCurrentUserType() == "student") {
         ui.showStudentMenu();
-        
+
         int choice = ui.getMenuChoice("请选择功能 (0-5): ", 5);
-        
+
         switch (choice) {
             case 1:
                 ui.clearScreen();
@@ -411,7 +321,7 @@ void Registrar::handleStudentFunctions(UI& ui)
                 studentCoursesList(ui.getCurrentUserId());
                 ui.pauseScreen();
                 break;
-                
+
             case 2:
                 ui.clearScreen();
                 print("========================================\n");
@@ -420,7 +330,7 @@ void Registrar::handleStudentFunctions(UI& ui)
                 studentSchedule(ui.getCurrentUserId());
                 ui.pauseScreen();
                 break;
-                
+
             case 3:
                 ui.clearScreen();
                 print("========================================\n");
@@ -429,7 +339,7 @@ void Registrar::handleStudentFunctions(UI& ui)
                 studentGrades(ui.getCurrentUserId());
                 ui.pauseScreen();
                 break;
-                
+
             case 4:
                 {
                     ui.clearScreen();
@@ -442,7 +352,7 @@ void Registrar::handleStudentFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 5:
                 {
                     ui.clearScreen();
@@ -455,7 +365,7 @@ void Registrar::handleStudentFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 0:
                 ui.clearCurrentUser();
                 return;
@@ -467,9 +377,9 @@ void Registrar::handleTeacherFunctions(UI& ui)
 {
     while (ui.getCurrentUserType() == "teacher") {
         ui.showTeacherMenu();
-        
+
         int choice = ui.getMenuChoice("请选择功能 (0-4): ", 4);
-        
+
         switch (choice) {
             case 1:
                 ui.clearScreen();
@@ -479,7 +389,7 @@ void Registrar::handleTeacherFunctions(UI& ui)
                 teacherTeachingCourses(ui.getCurrentUserId());
                 ui.pauseScreen();
                 break;
-                
+
             case 2:
                 ui.clearScreen();
                 print("========================================\n");
@@ -488,7 +398,7 @@ void Registrar::handleTeacherFunctions(UI& ui)
                 teacherSchedule(ui.getCurrentUserId());
                 ui.pauseScreen();
                 break;
-                
+
             case 3:
                 {
                     ui.clearScreen();
@@ -500,7 +410,7 @@ void Registrar::handleTeacherFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 4:
                 {
                     ui.clearScreen();
@@ -517,7 +427,7 @@ void Registrar::handleTeacherFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 0:
                 ui.clearCurrentUser();
                 return;
@@ -529,9 +439,9 @@ void Registrar::handleSecretaryFunctions(UI& ui)
 {
     while (ui.getCurrentUserType() == "secretary") {
         ui.showSecretaryMenu();
-        
+
         int choice = ui.getMenuChoice("请选择功能 (0-5): ", 5);
-        
+
         switch (choice) {
             case 1:
                 {
@@ -546,7 +456,7 @@ void Registrar::handleSecretaryFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 2:
                 {
                     ui.clearScreen();
@@ -560,7 +470,7 @@ void Registrar::handleSecretaryFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 3:
                 {
                     ui.clearScreen();
@@ -579,7 +489,7 @@ void Registrar::handleSecretaryFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 4:
                 ui.clearScreen();
                 print("========================================\n");
@@ -588,7 +498,7 @@ void Registrar::handleSecretaryFunctions(UI& ui)
                 secretaryScheduledCourses(ui.getCurrentUserId());
                 ui.pauseScreen();
                 break;
-                
+
             case 5:
                 {
                     ui.clearScreen();
@@ -605,7 +515,7 @@ void Registrar::handleSecretaryFunctions(UI& ui)
                     ui.pauseScreen();
                 }
                 break;
-                
+
             case 0:
                 ui.clearCurrentUser();
                 return;

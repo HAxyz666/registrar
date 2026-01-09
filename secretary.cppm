@@ -7,6 +7,9 @@
 
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:setcourse,assigncouse;
+//  [v1.0] chao li (3042525170@qq.com)   2026-01-05
+//         * added:检查排课时间地点冲突
+
 export module registrar:secretary;
 
 import std;

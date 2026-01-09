@@ -11,6 +11,7 @@ project(REGISTRAR LANGUAGES CXX)
 add_executable(REGISTRAR
     #math.cpp                              # 模块实现单元
     main.cpp
+
 )
 
 set(MODULE_INTERFACE_FILES
@@ -29,13 +30,24 @@ set(CONTRAL_FILES
 
 
 )
+
+
+set(BROKER_FILES
+    broker_factory.cppm
+    student_broker.cppm
+    course_broker.cppm
+    teacher_broker.cppm
+    secretary_broker.cppm
+
+)
 source_group("Module Interfaces" FILES ${MODULE_INTERFACE_FILES})
 source_group("Contral File" FILES ${CONTRAL_FILES})
+source_group("Broker File" FILES ${BROKER_FILES})
 target_sources(REGISTRAR  PRIVATE FILE_SET cxx_modules TYPE CXX_MODULES
     BASE_DIRS                              # 配置BASE_DIRS，用于组织构建输出目录，以便构建不同目录中(同名的)模块文件.
         #${MODULE_LIB_DIR1}
         ${CMAKE_CURRENT_SOURCE_DIR}
-    FILES ${MODULE_INTERFACE_FILES} ${CONTRAL_FILES}
+    FILES ${MODULE_INTERFACE_FILES} ${CONTRAL_FILES} ${BROKER_FILES}
 )
 target_compile_features(REGISTRAR PRIVATE cxx_std_23)
 
