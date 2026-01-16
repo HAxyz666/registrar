@@ -25,6 +25,7 @@ export import :course;
 export import :teacher;
 export import :secretary;
 export import :ui;
+export import :database_manager;
 
 using std::string;
 using std::vector;
@@ -89,6 +90,17 @@ Registrar &Registrar::singleton(){
 }
 
 void Registrar::initialize(){
+    // 初始化数据库连接
+    auto& db = DatabaseManager::singleton();
+    if (!db.connect("localhost", "5432", "registrar_db", "postgres", "postgres")) {
+        std::print("警告: 数据库连接失败，将使用内存模式运行\n");
+    } else {
+        // 初始化数据库表
+        if (!db.initializeTables()) {
+            std::print("警告: 数据库表初始化失败\n");
+        }
+    }
+
     // 直接创建Broker实例（简化版工厂模式）
     _studentBroker = make_shared<StudentBroker>();
     _courseBroker = make_shared<CourseBroker>();

@@ -10,6 +10,7 @@ export module registrar:course_broker;
 import std;
 import :broker_factory;
 import :course;
+import :database_manager;
 
 using std::string;
 using std::vector;
@@ -25,14 +26,42 @@ public:
 
 private:
     vector<Course*> _courses;
+    void loadFromDatabase();
 
 };
 
 void CourseBroker::initialize()
 {
-    _courses.push_back(new Course("CS101", "C Programming"));
-    _courses.push_back(new Course("CS201", "Data structure"));
-    _courses.push_back(new Course("MATH101", "Advanced Math"));
+    // 尝试从数据库加载数据
+    loadFromDatabase();
+    
+    // 如果数据库中没有数据或连接失败，使用默认数据
+    if (_courses.empty()) {
+        _courses.push_back(new Course("CS101", "C Programming"));
+        _courses.push_back(new Course("CS201", "Data structure"));
+        _courses.push_back(new Course("MATH101", "Advanced Math"));
+    }
+}
+
+void CourseBroker::loadFromDatabase()
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string query = "SELECT id, name, credit FROM courses ORDER BY id;";
+    auto results = db.executeSelect(query);
+    
+    for (const auto& row : results) {
+        if (row.size() >= 2) {
+            _courses.push_back(new Course(row[0], row[1]));
+        }
+    }
+    
+    if (!_courses.empty()) {
+        std::print("从数据库加载了 {} 个课程记录\n", _courses.size());
+    }
 }
 
 Course* CourseBroker::findCourseById(const string& id)

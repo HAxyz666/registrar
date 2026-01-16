@@ -12,6 +12,7 @@ import :broker_factory;
 import :secretary;
 import :course;
 import :teacher;
+import :database_manager;
 
 using std::string;
 using std::vector;
@@ -32,13 +33,41 @@ public:
 
 private:
     vector<Secretary*> _secretaries;
+    void loadFromDatabase();
 
 };
 
 void SecretaryBroker::initialize()
 {
-    _secretaries.push_back(new Secretary("SEC001", "Ms. Wang"));
-    _secretaries.push_back(new Secretary("SEC002", "Mr. Li"));
+    // 尝试从数据库加载数据
+    loadFromDatabase();
+    
+    // 如果数据库中没有数据或连接失败，使用默认数据
+    if (_secretaries.empty()) {
+        _secretaries.push_back(new Secretary("SEC001", "Ms. Wang"));
+        _secretaries.push_back(new Secretary("SEC002", "Mr. Li"));
+    }
+}
+
+void SecretaryBroker::loadFromDatabase()
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string query = "SELECT id, name FROM secretaries ORDER BY id;";
+    auto results = db.executeSelect(query);
+    
+    for (const auto& row : results) {
+        if (row.size() >= 2) {
+            _secretaries.push_back(new Secretary(row[0], row[1]));
+        }
+    }
+    
+    if (!_secretaries.empty()) {
+        std::print("从数据库加载了 {} 个教学秘书记录\n", _secretaries.size());
+    }
 }
 
 Secretary* SecretaryBroker::findSecretaryById(const string& id) {

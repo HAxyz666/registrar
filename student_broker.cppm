@@ -11,6 +11,7 @@ import std;
 import :broker_factory;
 import :student;
 import :course;
+import :database_manager;
 
 using std::string;
 using std::vector;
@@ -32,16 +33,44 @@ public:
 
 private:
     vector<Student*> _students;
+    void loadFromDatabase();
 
 };
 
 void StudentBroker::initialize()
 {
-    _students.push_back(new Student("S001", "Thomas"));
-    _students.push_back(new Student("S002", "Jerry"));
-    _students.push_back(new Student("S003", "Baker"));
-    _students.push_back(new Student("S004", "Tom"));
-    _students.push_back(new Student("S005", "Musk"));
+    // 尝试从数据库加载数据
+    loadFromDatabase();
+    
+    // 如果数据库中没有数据或连接失败，使用默认数据
+    if (_students.empty()) {
+        _students.push_back(new Student("S001", "Thomas"));
+        _students.push_back(new Student("S002", "Jerry"));
+        _students.push_back(new Student("S003", "Baker"));
+        _students.push_back(new Student("S004", "Tom"));
+        _students.push_back(new Student("S005", "Musk"));
+    }
+}
+
+void StudentBroker::loadFromDatabase()
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string query = "SELECT id, name FROM students ORDER BY id;";
+    auto results = db.executeSelect(query);
+    
+    for (const auto& row : results) {
+        if (row.size() >= 2) {
+            _students.push_back(new Student(row[0], row[1]));
+        }
+    }
+    
+    if (!_students.empty()) {
+        std::print("从数据库加载了 {} 个学生记录\n", _students.size());
+    }
 }
 
 Student* StudentBroker::findStudentById(const string& id)

@@ -27,6 +27,7 @@ set(MODULE_INTERFACE_FILES
 
 set(CONTRAL_FILES
     registrar.cppm
+    database_manager.cppm
 
 
 )
@@ -50,6 +51,17 @@ target_sources(REGISTRAR  PRIVATE FILE_SET cxx_modules TYPE CXX_MODULES
     FILES ${MODULE_INTERFACE_FILES} ${CONTRAL_FILES} ${BROKER_FILES}
 )
 target_compile_features(REGISTRAR PRIVATE cxx_std_23)
+
+# PostgreSQL配置
+find_package(PostgreSQL REQUIRED)
+if(PostgreSQL_FOUND)
+    include_directories(${PostgreSQL_INCLUDE_DIRS})
+    target_link_libraries(REGISTRAR PRIVATE ${PostgreSQL_LIBRARIES})
+    message(STATUS "PostgreSQL found: ${PostgreSQL_INCLUDE_DIRS}")
+    message(STATUS "PostgreSQL libraries: ${PostgreSQL_LIBRARIES}")
+else()
+    message(FATAL_ERROR "PostgreSQL not found!")
+endif()
 
 
 
