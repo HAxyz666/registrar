@@ -27,6 +27,7 @@ public:
 private:
     vector<Course*> _courses;
     void loadFromDatabase();
+    void saveCourseToDatabase(const string& cid, const string& cname);
 
 };
 
@@ -83,6 +84,7 @@ Course* CourseBroker::createCourse(const string& cid, const string& cname)
     }
     course = new Course(cid, cname);
     _courses.push_back(course);
+    saveCourseToDatabase(cid, cname);
     return course;
 }
 
@@ -93,4 +95,22 @@ string CourseBroker::courseRoster(const string& cid)
         return course->roster();
     }
     return "课程不存在！\n";
+}
+
+void CourseBroker::saveCourseToDatabase(const string& cid, const string& cname)
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string escapedCid = db.escapeString(cid);
+    string escapedCname = db.escapeString(cname);
+    
+    string query = "INSERT INTO courses (id, name, credit) VALUES (" 
+                   + escapedCid + ", " + escapedCname + ", 0);";
+    
+    if (!db.executeQuery(query)) {
+        std::print("错误: 保存课程到数据库失败\n");
+    }
 }

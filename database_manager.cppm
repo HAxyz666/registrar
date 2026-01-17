@@ -4,43 +4,13 @@
 // Description:
 //     数据库管理模块：负责PostgreSQL数据库连接和基本操作
 
+module;
+
+#include <libpq-fe.h>
+
 export module registrar:database_manager;
 
 import std;
-
-// PostgreSQL C API 前向声明
-extern "C" {
-    struct pg_conn;
-    typedef struct pg_conn PGconn;
-    typedef struct pg_result PGresult;
-    
-    // 连接状态常量
-    #define CONNECTION_OK 0
-    
-    // 查询结果状态常量
-    #define PGRES_EMPTY_QUERY 0
-    #define PGRES_COMMAND_OK 1
-    #define PGRES_TUPLES_OK 2
-    #define PGRES_COPY_OUT 3
-    #define PGRES_COPY_IN 4
-    #define PGRES_BAD_RESPONSE 5
-    #define PGRES_NONFATAL_ERROR 6
-    #define PGRES_FATAL_ERROR 7
-    #define PGRES_COPY_BOTH 8
-    #define PGRES_SINGLE_TUPLE 9
-    
-    PGconn* PQconnectdb(const char* conninfo);
-    void PQfinish(PGconn* conn);
-    PGresult* PQexec(PGconn* conn, const char* query);
-    void PQclear(PGresult* res);
-    int PQstatus(const PGconn* conn);
-    char* PQerrorMessage(const PGconn* conn);
-    int PQntuples(const PGresult* res);
-    int PQnfields(const PGresult* res);
-    char* PQgetvalue(const PGresult* res, int tup_num, int field_num);
-    char* PQfname(const PGresult* res, int field_num);
-    int PQresultStatus(const PGresult* res);
-}
 
 using std::string;
 using std::vector;
@@ -77,6 +47,10 @@ private:
     // 禁用拷贝
     DatabaseManager(const DatabaseManager&) = delete;
     DatabaseManager& operator=(const DatabaseManager&) = delete;
+    
+    // 连接重试机制
+    inline static const int MAX_RETRY_ATTEMPTS = 3;
+    bool connectWithRetry(const string& conninfo);
 };
 
 // ----- 单例实现 -----
@@ -94,6 +68,31 @@ DatabaseManager::~DatabaseManager()
 
 // ----- 连接管理 -----
 
+bool DatabaseManager::connectWithRetry(const string& conninfo)
+{
+    for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
+        _connection = PQconnectdb(conninfo.c_str());
+        
+        if (PQstatus(_connection) == CONNECTION_OK) {
+            std::print("成功连接到PostgreSQL数据库\n");
+            return true;
+        }
+        
+        std::print("数据库连接失败 (尝试 {}/{}): {}\n", 
+                   attempt, MAX_RETRY_ATTEMPTS, PQerrorMessage(_connection));
+        
+        PQfinish(_connection);
+        _connection = nullptr;
+        
+        if (attempt < MAX_RETRY_ATTEMPTS) {
+            std::print("等待 {} 秒后重试...\n", attempt * 2);
+            std::this_thread::sleep_for(std::chrono::seconds(attempt * 2));
+        }
+    }
+    
+    return false;
+}
+
 bool DatabaseManager::connect(const string& host, const string& port, const string& dbname,
                               const string& user, const string& password)
 {
@@ -107,17 +106,7 @@ bool DatabaseManager::connect(const string& host, const string& port, const stri
                       " user=" + user + 
                       " password=" + password;
     
-    _connection = PQconnectdb(conninfo.c_str());
-    
-    if (PQstatus(_connection) != CONNECTION_OK) {
-        std::print("数据库连接失败: {}\n", PQerrorMessage(_connection));
-        PQfinish(_connection);
-        _connection = nullptr;
-        return false;
-    }
-    
-    std::print("成功连接到PostgreSQL数据库\n");
-    return true;
+    return connectWithRetry(conninfo);
 }
 
 void DatabaseManager::disconnect()
@@ -286,20 +275,22 @@ vector<vector<string>> DatabaseManager::executeSelect(const string& query)
 
 string DatabaseManager::escapeString(const string& input)
 {
-    string escaped;
-    escaped.reserve(input.size() * 2);
-    
-    for (char c : input) {
-        if (c == '\'') {
-            escaped += "''";
-        } else if (c == '\\') {
-            escaped += "\\\\";
-        } else {
-            escaped += c;
-        }
+    if (!isConnected()) {
+        std::print("错误: 数据库未连接\n");
+        return "";
     }
     
-    return escaped;
+    char* escaped = PQescapeLiteral(_connection, input.c_str(), input.size());
+    
+    if (!escaped) {
+        std::print("错误: 字符串转义失败: {}\n", PQerrorMessage(_connection));
+        return "";
+    }
+    
+    string result(escaped);
+    PQfreemem(escaped);
+    
+    return result;
 }
 
 int DatabaseManager::getLastInsertId(const string& tableName, const string& idColumn)

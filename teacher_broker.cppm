@@ -31,6 +31,8 @@ public:
 private:
     vector<Teacher*> _teachers;
     void loadFromDatabase();
+    void saveGradeToDatabase(const string& sid, const string& cid, double grade);
+    void saveTeachingToDatabase(const string& tid, const string& cid);
 };
 
 void TeacherBroker::initialize()
@@ -81,6 +83,7 @@ void TeacherBroker::assignTeacherToCourse(string tid, string cid, Teacher* teach
 {
     if (teacher && course) {
         teacher->assignCourse(course);
+        saveTeachingToDatabase(tid, cid);
     } else {
         std::print("错误: 教师或课程不存在！\n");
     }
@@ -90,6 +93,7 @@ void TeacherBroker::teacherGradeStudent(string tid, string sid, string cid, Teac
 {
     if (teacher && student && course) {
         teacher->gradeStudent(student, course, grade);
+        saveGradeToDatabase(sid, cid, grade);
     } else {
          std::print("错误: 教师、学生或课程不存在！\n");
     }
@@ -109,4 +113,41 @@ string TeacherBroker::teacherSchedule(const string& tid) {
         return teacher->schedule();
     }
     return "教师不存在！\n";
+}
+
+void TeacherBroker::saveGradeToDatabase(const string& sid, const string& cid, double grade)
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string escapedSid = db.escapeString(sid);
+    string escapedCid = db.escapeString(cid);
+    
+    string query = "INSERT INTO grades (student_id, course_id, grade) VALUES (" 
+                   + escapedSid + ", " + escapedCid + ", " + std::to_string(grade) + ") "
+                   + "ON CONFLICT (student_id, course_id) DO UPDATE SET grade = EXCLUDED.grade;";
+    
+    if (!db.executeQuery(query)) {
+        std::print("错误: 保存成绩到数据库失败\n");
+    }
+}
+
+void TeacherBroker::saveTeachingToDatabase(const string& tid, const string& cid)
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string escapedTid = db.escapeString(tid);
+    string escapedCid = db.escapeString(cid);
+    
+    string query = "INSERT INTO teaching (teacher_id, course_id) VALUES (" 
+                   + escapedTid + ", " + escapedCid + ");";
+    
+    if (!db.executeQuery(query)) {
+        std::print("错误: 保存授课记录到数据库失败\n");
+    }
 }

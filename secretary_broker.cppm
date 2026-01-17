@@ -34,6 +34,8 @@ public:
 private:
     vector<Secretary*> _secretaries;
     void loadFromDatabase();
+    void saveScheduleToDatabase(const string& cid, const string& tid, const string& timeSlot, const string& classroom);
+    void removeScheduleFromDatabase(const string& cid, const string& timeSlot);
 
 };
 
@@ -102,6 +104,7 @@ void SecretaryBroker::secretarySetSchedule(string secid, string cid, string tid,
 {
 if (secretary && course && teacher) {
     secretary->setCourseSchedule(course, teacher, timeSlot, classroom);
+    saveScheduleToDatabase(cid, tid, timeSlot, classroom);
     } else {
         std::print("错误: 教学秘书、课程或教师不存在！\n");
     }
@@ -120,7 +123,46 @@ void SecretaryBroker::secretaryCancelSchedule(string secid, string cid, string t
 {
     if (secretary && course) {
         secretary->cancelCourseSchedule(course, timeSlot);
+        removeScheduleFromDatabase(cid, timeSlot);
     } else {
         std::print("错误: 教学秘书或课程不存在！\n");
+    }
+}
+
+void SecretaryBroker::saveScheduleToDatabase(const string& cid, const string& tid, const string& timeSlot, const string& classroom)
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string escapedCid = db.escapeString(cid);
+    string escapedTid = db.escapeString(tid);
+    string escapedTimeSlot = db.escapeString(timeSlot);
+    string escapedClassroom = db.escapeString(classroom);
+    
+    string query = "INSERT INTO schedules (course_id, teacher_id, time_slot, classroom) VALUES (" 
+                   + escapedCid + ", " + escapedTid + ", " + escapedTimeSlot + ", " + escapedClassroom + ");";
+    
+    if (!db.executeQuery(query)) {
+        std::print("错误: 保存排课记录到数据库失败\n");
+    }
+}
+
+void SecretaryBroker::removeScheduleFromDatabase(const string& cid, const string& timeSlot)
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string escapedCid = db.escapeString(cid);
+    string escapedTimeSlot = db.escapeString(timeSlot);
+    
+    string query = "DELETE FROM schedules WHERE course_id = " 
+                   + escapedCid + " AND time_slot = " + escapedTimeSlot + ";";
+    
+    if (!db.executeQuery(query)) {
+        std::print("错误: 从数据库删除排课记录失败\n");
     }
 }
