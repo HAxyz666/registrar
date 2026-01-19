@@ -50,6 +50,7 @@ private:
     string currentUserType;
     string currentUserId;
     string lastMessage;  // 保存上一步的反馈信息
+    char getChoiceOfClear(std::string info);
 };
 
 UI& UI::singleton()
@@ -63,9 +64,23 @@ void UI::run()
     clearCurrentUser();
 }
 
+char UI::getChoiceOfClear(std::string info){
+    char tmp;
+    std::print("{}", info);
+    tmp = cin.get();
+    return tmp;
+}
+
 void UI::clearScreen()
 {
-    // std::system("clear");
+    char tmp = getChoiceOfClear("按回车以继续...");
+    while(true){
+        if(tmp == '\n'){
+            std::system("clear");
+            return;
+        }
+        tmp = getChoiceOfClear("按回车进行下一步！");
+    }
 }
 
 void UI::pauseScreen()
