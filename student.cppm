@@ -34,6 +34,7 @@ private:
 
     friend class DatabaseManager;
     friend class Registrar;
+    friend class StudentBroker;
 };
 
 // ----- Partial implementation of class Student -----

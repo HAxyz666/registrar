@@ -112,6 +112,11 @@ void Registrar::initialize(){
     _courseBroker->initialize();
     _teacherBroker->initialize();
     _secretaryBroker->initialize();
+
+    // 设置Broker之间的引用
+    _secretaryBroker->setBrokers(_courseBroker.get(), _teacherBroker.get());
+    _studentBroker->setCourseBroker(_courseBroker.get());
+    _teacherBroker->setCourseBroker(_courseBroker.get());
 }
 
 Registrar::Registrar(){}

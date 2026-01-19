@@ -31,10 +31,11 @@ private:
     static int tm_totalCount;  // static data member
 
     vector<class Course*> _assignedCourses;
-    
+
     friend class Secretary;
     friend class DatabaseManager;
     friend class Registrar;
+    friend class TeacherBroker;
 };
 
 // ----- Partial implementation of class Teacher -----

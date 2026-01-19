@@ -65,7 +65,7 @@ void UI::run()
 
 void UI::clearScreen()
 {
-    std::system("clear");
+    // std::system("clear");
 }
 
 void UI::pauseScreen()

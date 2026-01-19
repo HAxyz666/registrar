@@ -39,9 +39,11 @@ private:
 
     vector<class Student*> _students;
     vector<RoomAndTime> m_roomandtime;  // 课程时间安排
-    
+
     friend class DatabaseManager;
     friend class Registrar;
+    friend class SecretaryBroker;
+    friend class StudentBroker;
 };
 
 // ----- Partial implementation of class Course -----

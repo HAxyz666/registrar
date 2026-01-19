@@ -11,6 +11,7 @@ import std;
 import :broker_factory;
 import :student;
 import :course;
+import :course_broker;
 import :database_manager;
 
 using std::string;
@@ -24,6 +25,7 @@ public:
     StudentBroker() = default;
     ~StudentBroker() = default;
     void initialize() override;
+    void setCourseBroker(class CourseBroker* courseBroker);
     Student* findStudentById(const string& id);
     void studentEnrollsInCourse(string sid, string cid, Course* course);
     void studentDropsFromCourse(string sid, string cid, Course* course);
@@ -33,9 +35,12 @@ public:
 
 private:
     vector<Student*> _students;
+    CourseBroker* _courseBroker = nullptr;
     void loadFromDatabase();
+    void loadGradesFromDatabase();
     void saveEnrollmentToDatabase(const string& sid, const string& cid);
     void removeEnrollmentFromDatabase(const string& sid, const string& cid);
+    void removeGradeFromDatabase(const string& sid, const string& cid);
     void loadEnrollmentsFromDatabase();
 
 };
@@ -44,7 +49,7 @@ void StudentBroker::initialize()
 {
     // 尝试从数据库加载数据
     loadFromDatabase();
-    
+
     // 如果数据库中没有数据或连接失败，使用默认数据
     if (_students.empty()) {
         _students.push_back(new Student("S001", "Thomas"));
@@ -53,9 +58,17 @@ void StudentBroker::initialize()
         _students.push_back(new Student("S004", "Tom"));
         _students.push_back(new Student("S005", "Musk"));
     }
-    
-    // 加载选课记录
+
+    // 注意：loadEnrollmentsFromDatabase 和 loadGradesFromDatabase 将在 setCourseBroker 之后调用
+}
+
+void StudentBroker::setCourseBroker(CourseBroker* courseBroker)
+{
+    _courseBroker = courseBroker;
+
+    // 在设置 CourseBroker 之后加载选课和成绩记录
     loadEnrollmentsFromDatabase();
+    loadGradesFromDatabase();
 }
 
 void StudentBroker::loadFromDatabase()
@@ -106,6 +119,7 @@ void StudentBroker::studentDropsFromCourse(string sid, string cid, Course* cours
     if (student && course) {
         student->dropsFrom(course);
         removeEnrollmentFromDatabase(sid, cid);
+        removeGradeFromDatabase(sid, cid);
     } else {
         std::print("错误: 学生或课程不存在！\n");
     }
@@ -149,7 +163,8 @@ void StudentBroker::saveEnrollmentToDatabase(const string& sid, const string& ci
     string escapedCid = db.escapeString(cid);
     
     string query = "INSERT INTO enrollments (student_id, course_id) VALUES (" 
-                   + escapedSid + ", " + escapedCid + ");";
+                   + escapedSid + ", " + escapedCid + ") "
+                   "ON CONFLICT (student_id, course_id) DO NOTHING;";
     
     if (!db.executeQuery(query)) {
         std::print("错误: 保存选课记录到数据库失败\n");
@@ -180,21 +195,78 @@ void StudentBroker::loadEnrollmentsFromDatabase()
     if (!db.isConnected()) {
         return;
     }
-    
+
     string query = "SELECT student_id, course_id FROM enrollments ORDER BY student_id, course_id;";
     auto results = db.executeSelect(query);
-    
+
     int count = 0;
     for (const auto& row : results) {
         if (row.size() >= 2) {
-            Student* student = findStudentById(row[0]);
-            // 需要通过CourseBroker获取Course对象
-            // 这里暂时跳过，需要在后续处理
-            count++;
+            if (_courseBroker) {
+                Student* student = findStudentById(row[0]);
+                Course* course = _courseBroker->findCourseById(row[1]);
+                if (student && course) {
+                    student->_courses.push_back(course);
+                    course->_students.push_back(student);
+                    count++;
+                }
+            }
         }
     }
-    
+
     if (count > 0) {
         std::print("从数据库加载了 {} 个选课记录\n", count);
+    }
+}
+
+void StudentBroker::loadGradesFromDatabase()
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+
+    string query = "SELECT student_id, course_id, grade FROM grades ORDER BY student_id, course_id;";
+    auto results = db.executeSelect(query);
+
+    int count = 0;
+    for (const auto& row : results) {
+        if (row.size() >= 3) {
+            if (_courseBroker) {
+                Student* student = findStudentById(row[0]);
+                Course* course = _courseBroker->findCourseById(row[1]);
+                if (student && course) {
+                    try {
+                        double grade = std::stod(row[2]);
+                        student->addGrade(course, grade);
+                        count++;
+                    } catch (...) {
+                        // 忽略无效的成绩数据
+                    }
+                }
+            }
+        }
+    }
+
+    if (count > 0) {
+        std::print("从数据库加载了 {} 个成绩记录\n", count);
+    }
+}
+
+void StudentBroker::removeGradeFromDatabase(const string& sid, const string& cid)
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+    
+    string escapedSid = db.escapeString(sid);
+    string escapedCid = db.escapeString(cid);
+    
+    string query = "DELETE FROM grades WHERE student_id = " 
+                   + escapedSid + " AND course_id = " + escapedCid + ";";
+    
+    if (!db.executeQuery(query)) {
+        std::print("错误: 从数据库删除成绩记录失败\n");
     }
 }

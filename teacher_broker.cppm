@@ -12,6 +12,7 @@ import :broker_factory;
 import :teacher;
 import :course;
 import :student;
+import :course_broker;
 import :database_manager;
 
 using std::string;
@@ -22,6 +23,7 @@ public:
     TeacherBroker() = default;
     ~TeacherBroker() = default;
     void initialize() override;
+    void setCourseBroker(class CourseBroker* courseBroker);
     Teacher* findTeacherById(const string& id);
     void assignTeacherToCourse(string tid, string cid, Teacher* teacher, Course* course);
     void teacherGradeStudent(string tid, string sid, string cid, Teacher* teacher, Student* student, Course* course, double grade);
@@ -30,7 +32,9 @@ public:
 
 private:
     vector<Teacher*> _teachers;
+    CourseBroker* _courseBroker = nullptr;
     void loadFromDatabase();
+    void loadTeachingFromDatabase();
     void saveGradeToDatabase(const string& sid, const string& cid, double grade);
     void saveTeachingToDatabase(const string& tid, const string& cid);
 };
@@ -39,13 +43,23 @@ void TeacherBroker::initialize()
 {
     // 尝试从数据库加载数据
     loadFromDatabase();
-    
+
     // 如果数据库中没有数据或连接失败，使用默认数据
     if (_teachers.empty()) {
         _teachers.push_back(new Teacher("T001", "Dr. Smith"));
         _teachers.push_back(new Teacher("T002", "Dr. Johnson"));
         _teachers.push_back(new Teacher("T003", "Dr. Brown"));
     }
+
+    // 注意：loadTeachingFromDatabase 将在 setCourseBroker 之后调用
+}
+
+void TeacherBroker::setCourseBroker(CourseBroker* courseBroker)
+{
+    _courseBroker = courseBroker;
+
+    // 在设置 CourseBroker 之后加载授课记录
+    loadTeachingFromDatabase();
 }
 
 void TeacherBroker::loadFromDatabase()
@@ -149,5 +163,34 @@ void TeacherBroker::saveTeachingToDatabase(const string& tid, const string& cid)
     
     if (!db.executeQuery(query)) {
         std::print("错误: 保存授课记录到数据库失败\n");
+    }
+}
+
+void TeacherBroker::loadTeachingFromDatabase()
+{
+    auto& db = DatabaseManager::singleton();
+    if (!db.isConnected()) {
+        return;
+    }
+
+    string query = "SELECT teacher_id, course_id FROM teaching ORDER BY teacher_id, course_id;";
+    auto results = db.executeSelect(query);
+
+    int count = 0;
+    for (const auto& row : results) {
+        if (row.size() >= 2) {
+            if (_courseBroker) {
+                Teacher* teacher = findTeacherById(row[0]);
+                Course* course = _courseBroker->findCourseById(row[1]);
+                if (teacher && course) {
+                    teacher->_assignedCourses.push_back(course);
+                    count++;
+                }
+            }
+        }
+    }
+
+    if (count > 0) {
+        std::print("从数据库加载了 {} 个授课记录\n", count);
     }
 }
