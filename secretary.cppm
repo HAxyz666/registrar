@@ -7,6 +7,9 @@
 
 //  [v1.0] chao li (3042525170@qq.com)   2026-01-04
 //         * added:setcourse,assigncouse;
+//  [v1.0] chao li (3042525170@qq.com)   2026-01-05
+//         * added:检查排课时间地点冲突
+
 export module registrar:secretary;
 
 import std;
@@ -96,10 +99,22 @@ void Secretary::setCourseSchedule(Course* course, Teacher* teacher, string timeS
 string Secretary::getScheduledCourses()
 {
     auto s = format("{} 安排的课程:\n", m_name);
+    bool hasScheduled = false;
+    
     for (auto& course : _createdCourses) {
-        s += course->info();
-        s += "\n";
+        if (!course->m_roomandtime.empty()) {
+            hasScheduled = true;
+            s += course->info();
+            s += " - 时间安排: ";
+            s += course->getScheduleInfo();
+            s += "\n";
+        }
     }
+    
+    if (!hasScheduled) {
+        s += "暂无已排课的课程\n";
+    }
+    
     return s;
 }
 

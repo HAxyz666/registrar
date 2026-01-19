@@ -49,6 +49,8 @@ private:
     UI() = default;
     string currentUserType;
     string currentUserId;
+    string lastMessage;  // 保存上一步的反馈信息
+    char getChoiceOfClear(std::string info);
 };
 
 UI& UI::singleton()
@@ -62,13 +64,23 @@ void UI::run()
     clearCurrentUser();
 }
 
+char UI::getChoiceOfClear(std::string info){
+    char tmp;
+    std::print("{}", info);
+    tmp = cin.get();
+    return tmp;
+}
+
 void UI::clearScreen()
 {
-#ifdef _WIN32
-    std::system("cls");
-#else
-    std::system("clear");
-#endif
+    char tmp = getChoiceOfClear("按回车以继续...");
+    while(true){
+        if(tmp == '\n'){
+            std::system("clear");
+            return;
+        }
+        tmp = getChoiceOfClear("按回车进行下一步！");
+    }
 }
 
 void UI::pauseScreen()
@@ -94,6 +106,7 @@ void UI::clearCurrentUser()
 {
     currentUserType = "";
     currentUserId = "";
+    lastMessage = "";
 }
 
 string UI::getUserInput(const string& prompt)
@@ -131,17 +144,23 @@ int UI::getMenuChoice(const string& prompt, int maxChoice)
 
 void UI::showMessage(const string& message)
 {
+    lastMessage = message;
     print("{}\n", message);
 }
 
 void UI::showError(const string& error)
 {
+    lastMessage = "错误: " + error;
     print("错误: {}\n", error);
 }
 
 void UI::showMainMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("        教务管理系统主菜单\n");
     print("========================================\n");
@@ -155,6 +174,10 @@ void UI::showMainMenu()
 void UI::showStudentMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("        学生功能菜单\n");
     print("========================================\n");
@@ -171,6 +194,10 @@ void UI::showStudentMenu()
 void UI::showTeacherMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("        教师功能菜单\n");
     print("========================================\n");
@@ -186,6 +213,10 @@ void UI::showTeacherMenu()
 void UI::showSecretaryMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("      教学秘书功能菜单\n");
     print("========================================\n");

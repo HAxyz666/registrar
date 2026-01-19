@@ -31,9 +31,10 @@ private:
 
     vector<class Course*> _courses;
     vector<pair<class Course*, double>> _grades; // 保存课程和成绩的映射
-    
+
     friend class DatabaseManager;
     friend class Registrar;
+    friend class StudentBroker;
 };
 
 // ----- Partial implementation of class Student -----
@@ -93,6 +94,22 @@ string Student::schedule()
     }
     return s;
 }
+
+void Student::enrollsIn(Course *course){
+    if(course->acceptEnrollment(this))
+        _courses.push_back(course);
+}
+
+string Student::coursesList()
+{
+    auto s = format("{}'s courses:\n", m_name);
+    for(auto &c: _courses){
+        s += c->info();
+        s += "\n";
+    }
+    return s;
+}
+
 void Student::dropsFrom(Course* course)
 {
     auto it = std::find(_courses.begin(), _courses.end(), course);
