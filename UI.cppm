@@ -49,6 +49,7 @@ private:
     UI() = default;
     string currentUserType;
     string currentUserId;
+    string lastMessage;  // 保存上一步的反馈信息
 };
 
 UI& UI::singleton()
@@ -64,11 +65,7 @@ void UI::run()
 
 void UI::clearScreen()
 {
-#ifdef _WIN32
-    std::system("cls");
-#else
     std::system("clear");
-#endif
 }
 
 void UI::pauseScreen()
@@ -94,6 +91,7 @@ void UI::clearCurrentUser()
 {
     currentUserType = "";
     currentUserId = "";
+    lastMessage = "";
 }
 
 string UI::getUserInput(const string& prompt)
@@ -131,17 +129,23 @@ int UI::getMenuChoice(const string& prompt, int maxChoice)
 
 void UI::showMessage(const string& message)
 {
+    lastMessage = message;
     print("{}\n", message);
 }
 
 void UI::showError(const string& error)
 {
+    lastMessage = "错误: " + error;
     print("错误: {}\n", error);
 }
 
 void UI::showMainMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("        教务管理系统主菜单\n");
     print("========================================\n");
@@ -155,6 +159,10 @@ void UI::showMainMenu()
 void UI::showStudentMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("        学生功能菜单\n");
     print("========================================\n");
@@ -171,6 +179,10 @@ void UI::showStudentMenu()
 void UI::showTeacherMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("        教师功能菜单\n");
     print("========================================\n");
@@ -186,6 +198,10 @@ void UI::showTeacherMenu()
 void UI::showSecretaryMenu()
 {
     clearScreen();
+    // 输出上一步的反馈信息
+    if (!lastMessage.empty()) {
+        print("{}\n\n", lastMessage);
+    }
     print("========================================\n");
     print("      教学秘书功能菜单\n");
     print("========================================\n");

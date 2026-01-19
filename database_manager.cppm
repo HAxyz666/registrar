@@ -70,6 +70,10 @@ DatabaseManager::~DatabaseManager()
 
 bool DatabaseManager::connectWithRetry(const string& conninfo)
 {
+    int status = std::system("pg_isready > /dev/null 2>&1");
+    if(status != 0){
+        std::system("sudo systemctl start postgresql");
+    }
     for (int attempt = 1; attempt <= MAX_RETRY_ATTEMPTS; attempt++) {
         _connection = PQconnectdb(conninfo.c_str());
         
